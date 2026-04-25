@@ -6,13 +6,10 @@ Add clear, consistent, and idiomatic documentation for a feature or module.
 
 ## Principles
 
-- Prefer language-native documentation:
-    - Java → Javadoc
-    - Kotlin → KDoc
-    - Others → follow ecosystem standards
-- Documentation should live close to the code where possible
+- Documentation should live close to the code
+- Only document where it adds value (avoid redundancy)
 
-## Steps
+## Steps to Gather Context and Execute
 
 1. Understand the feature
     - What does it do?
@@ -21,34 +18,26 @@ Add clear, consistent, and idiomatic documentation for a feature or module.
 2. Identify documentation targets
     - Public classes
     - Public methods/functions
-    - Complex logic sections
-3. Confirm documentation is needed
-    - Is it missing?
-    - Is it redundant?
-    - Does the current FileName and MethodName communicate the purpose enough?
-4. Apply documentation
-    - Use Javadoc/KDoc for code elements
-    - Use Markdown for higher-level docs
-5. Ensure coverage includes:
-    - Purpose
-    - Inputs (parameters)
-    - Outputs (return values)
-    - Side effects (if any)
-6. Add examples where helpful
-7. Validate
-    - Is it understandable to someone new?
-    - Is anything redundant or missing?
+    - Complex or non-obvious logic
+3. Evaluate necessity
+    - Is documentation missing?
+    - Is existing documentation unclear or redundant?
+    - Does naming already communicate intent sufficiently?
+4. Prepare input
+    - Collect relevant files or code snippets
+    - Focus on areas identified in previous steps
+5. Apply documentation
+    - Execute [document-code.md](../prompts/document-code.md)
+    - Provide prepared input as `{{content}}`
+6. Review output
+    - Is the documentation accurate?
+    - Is it concise and non-redundant?
+    - Does it follow project conventions?
+7. Iterate if needed
+    - Refine input or clarify intent
+    - Re-run prompt
 
-## Output Format
+## Output
 
-### Code-level
-
-- Javadoc / KDoc on public APIs / Language specific docs
-
-### Repo-level (if needed)
-
-- Markdown:
-    - Overview
-    - Usage
-    - Examples
-    - Notes
+- Updated code with improved documentation, if needed
+- Brief summary of changes made
