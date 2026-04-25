@@ -1,0 +1,16 @@
+{
+  "output": {
+    "maxVerbosity": "medium",
+    "preferMarkdown": true,
+    "includeExamples": true
+  },
+  "code": {
+    "maxFunctionLength": 100,
+    "preferExplicitNaming": true,
+    "avoidMagicValues": true
+  },
+  "git": {
+    "branchPattern": "<type>/<ticket>/<description>",
+    "requireTicket": false
+  }
+}
