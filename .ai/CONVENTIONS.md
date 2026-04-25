@@ -15,8 +15,10 @@
     - format: `<type>/<ticket>/<description>`
     - example: `feature/ABC-123/add-login`
 
-## Documentation
-- Use Markdown
+- ## Documentation Strategy
+- Use Javadoc/KDoc for code-level documentation
+- Use Markdown for workflows, architecture, and guides
+- Avoid duplicating the same information in multiple places
 - Include examples where applicable
 - Keep sections short and scannable
 

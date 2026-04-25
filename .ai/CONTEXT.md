@@ -13,6 +13,11 @@
 - Script-driven automation (see dev-scripts repo)
 - Additional Workflows are defined in `.ai/workflows/`
 
+## Common Prompts
+
+- Reusable instructions have been prepared and placed in the `/prompts/` folder
+- The user or workflows may invoke prompts
+
 ## Naming Conventions
 
 - Branches include JIRA ticket when available

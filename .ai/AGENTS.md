@@ -22,7 +22,7 @@ When generating content or code:
 
 ## Output Preferences
 
-- Use markdown formatting where possible
+- Use Markdown formatting where possible
 - Keep responses concise but complete
 - Provide examples when helpful
 - Avoid unnecessary verbosity
