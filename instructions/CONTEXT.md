@@ -10,7 +10,6 @@
 
 - Feature development via branch naming conventions
 - Pull request-driven development
-- Script-driven automation (see dev-scripts repo)
 - Additional Workflows are defined in `/workflows/`
 
 ## Common Prompts
@@ -25,11 +24,6 @@
 - Branches include JIRA ticket when available
 - Kebab-case for branch names
 - Descriptive naming is preferred over short names
-
-## Tooling
-
-- GitHub Copilot used for assistance
-- Custom scripts for repetitive workflows
 
 ## Philosophy
 
