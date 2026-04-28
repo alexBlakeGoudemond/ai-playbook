@@ -23,16 +23,44 @@ TARGET_DIR=".ai-playbook"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+PLAYBOOK_DIRS=(".ai" "prompts" "workflows")
+
 function sync_playbook() {
-  if [ -d "$TARGET_DIR" ]; then
-    echo "⚠️ $TARGET_DIR already exists"
+  echo "🔍 Source: $AI_PLAYBOOK_SOURCE"
+  echo "📁 Target: $TARGET_DIR"
+
+  # Safety checks
+  if [ -z "$AI_PLAYBOOK_SOURCE" ] || [ "$AI_PLAYBOOK_SOURCE" = "/" ]; then
+    echo "❌ Invalid source directory"
     exit 1
   fi
 
-  echo "✒️  Copying AI Playbook..."
-  cp -r "$AI_PLAYBOOK_SOURCE" "$TARGET_DIR"
+  if [ -z "$TARGET_DIR" ] || [ "$TARGET_DIR" = "/" ]; then
+    echo "❌ Invalid target directory"
+    exit 1
+  fi
 
-  echo "✅  Playbook copied successfully"
+  if [ -d "$TARGET_DIR" ]; then
+    echo "🧹 Removing existing $TARGET_DIR..."
+    rm -rf "$TARGET_DIR"
+  fi
+
+  mkdir -p "$TARGET_DIR"
+
+  echo "✒️  Copying selected AI Playbook components..."
+  copy_playbook
+  echo "✅  Playbook synced successfully"
+}
+
+function copy_playbook() {
+  for dir in "${PLAYBOOK_DIRS[@]}"; do
+    if [ -d "$AI_PLAYBOOK_SOURCE/$dir" ]; then
+      echo "  → Copying $dir"
+      cp -r "$AI_PLAYBOOK_SOURCE/$dir" "$TARGET_DIR/"
+    else
+      echo "  ⚠️ Skipping missing directory: $dir"
+    fi
+  done
 }
 
 case "$COMMAND" in
@@ -40,7 +68,7 @@ case "$COMMAND" in
     sync_playbook
     ;;
   *)
-    echo "Usage: ai-playbook {sync}"
+    echo "Usage: firstaid {sync}"
     exit 1
     ;;
 esac
