@@ -20,19 +20,19 @@ echo "────────────────────────�
 COMMAND=$1
 TARGET_DIR=".ai-playbook"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 function sync_playbook() {
   if [ -d "$TARGET_DIR" ]; then
     echo "⚠️ $TARGET_DIR already exists"
     exit 1
   fi
 
-  echo "📦 Copying AI Playbook..."
+  echo "✒️  Copying AI Playbook..."
   cp -r "$AI_PLAYBOOK_SOURCE" "$TARGET_DIR"
 
-  echo "📝 Creating manifest..."
-  find "$TARGET_DIR" -type f | sed "s|$TARGET_DIR/||" > "$MANIFEST_FILE"
-
-  echo "✅ Playbook copied successfully"
+  echo "✅  Playbook copied successfully"
 }
 
 case "$COMMAND" in
@@ -40,7 +40,7 @@ case "$COMMAND" in
     sync_playbook
     ;;
   *)
-    echo "Usage: ai-playbook {copy|sync|status}"
+    echo "Usage: ai-playbook {sync}"
     exit 1
     ;;
 esac
