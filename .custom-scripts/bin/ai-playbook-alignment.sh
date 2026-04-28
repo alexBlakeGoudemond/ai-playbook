@@ -4,6 +4,7 @@
 # ai-playbook-alignment: bring markdown files from a source directory to a target directory, with sync and status features
 # For fun, we named this little tool as `firstaid` because it assists in keeping your repository healthy and up-to-date!
 # Usage: firstaid sync
+# Usage: firstaid remove
 #
 # Bash insights:
 # - has custom defined functions which are invoked without parentheses, for example: `sync`
@@ -19,7 +20,7 @@ echo "────────────────────────�
 
 COMMAND=$1
 TARGET_DIR=".ai-playbook"
-TARGET_STANDALONE_FILES_DESTINATION=".ai-playbook/../"
+TARGET_STANDALONE_FILES_DESTINATION=".ai-playbook/.."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -77,12 +78,37 @@ function copy_standalone_files() {
   done
 }
 
+function remove_playbook() {
+  echo "🧹 Removing AI Playbook..."
+
+  for file in "${STANDALONE_FILES[@]}"; do
+    if [ -f "$AI_PLAYBOOK_SOURCE/$file" ]; then
+      echo "  → Removing $file"
+      rm "$TARGET_STANDALONE_FILES_DESTINATION/$file"
+    else
+      echo "  ⚠️ Skipping missing file: $file"
+    fi
+  done
+
+  if [ -d "$TARGET_DIR" ]; then
+    rm -rf "$TARGET_DIR"
+    echo "  → Removed $TARGET_DIR"
+  else
+    echo "  ⚠️ $TARGET_DIR does not exist"
+  fi
+
+  echo "✅ Remove complete"
+}
+
 case "$COMMAND" in
   sync)
     sync_playbook
     ;;
+  remove)
+    remove_playbook
+    ;;
   *)
-    echo "Usage: firstaid {sync}"
+    echo "Usage: firstaid {sync|remove}"
     exit 1
     ;;
 esac
