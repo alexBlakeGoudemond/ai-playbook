@@ -19,11 +19,13 @@ echo "────────────────────────�
 
 COMMAND=$1
 TARGET_DIR=".ai-playbook"
+TARGET_STANDALONE_FILES_DESTINATION=".ai-playbook/../"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-PLAYBOOK_DIRS=(".ai" "prompts" "workflows")
+PLAYBOOK_DIRS=("instructions" "prompts" "workflows")
+STANDALONE_FILES=("AGENTS.playbook.md")
 
 function sync_playbook() {
   echo "🔍 Source: $AI_PLAYBOOK_SOURCE"
@@ -49,6 +51,7 @@ function sync_playbook() {
 
   echo "✒️  Copying selected AI Playbook components..."
   copy_playbook
+  copy_standalone_files
   echo "✅  Playbook synced successfully"
 }
 
@@ -59,6 +62,17 @@ function copy_playbook() {
       cp -r "$AI_PLAYBOOK_SOURCE/$dir" "$TARGET_DIR/"
     else
       echo "  ⚠️ Skipping missing directory: $dir"
+    fi
+  done
+}
+
+function copy_standalone_files() {
+  for file in "${STANDALONE_FILES[@]}"; do
+    if [ -f "$AI_PLAYBOOK_SOURCE/$file" ]; then
+      echo "  → Copying $file"
+      cp "$AI_PLAYBOOK_SOURCE/$file" "$TARGET_STANDALONE_FILES_DESTINATION"
+    else
+      echo "  ⚠️ Skipping missing file: $file"
     fi
   done
 }
