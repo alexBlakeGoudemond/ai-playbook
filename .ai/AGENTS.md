@@ -15,10 +15,11 @@ This repository contains AI playbooks, prompts, and workflows to improve develop
 
 When generating content or code:
 
-- Follow conventions defined in `CONVENTIONS.md`
-- Use context from `CONTEXT.md` when relevant
+- Follow conventions defined in [CONVENTIONS.md](CONVENTIONS.md)
+- Use context from [CONTEXT.md](CONVENTIONS.md) when relevant
 - Prefer structured, step-by-step outputs for workflows
 - Ask clarifying questions if requirements are ambiguous
+- Check for Additional, more specific AI resources in the active repository
 
 ## Output Preferences
 
