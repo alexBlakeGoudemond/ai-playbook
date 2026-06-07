@@ -1,17 +1,16 @@
 # --------------------------------------------------------------------------------------------------------
-# ai-playbook-alignment: bring markdown files from a source directory to a target directory, with sync and status features
+# firstaid: bring markdown files from a source directory to a target directory, with sync and status features
 # For fun, we named this little tool as `firstaid` because it assists in keeping your repository healthy and up-to-date!
 # Usage: firstaid sync
 # Usage: firstaid remove
 # --------------------------------------------------------------------------------------------------------
-import os
 import shutil
 import sys
 from pathlib import Path
 
 ALIAS_VERSION = "1.0.0"
 
-TARGET_DIR = Path(os.getcwd() + "\\.ai-playbook")
+TARGET_DIR = Path.cwd() / ".ai-playbook"
 TARGET_STANDALONE_FILES_DESTINATION = TARGET_DIR.parent
 SCRIPT_DIR = Path(__file__).parent.resolve()
 AI_PLAYBOOK_SOURCE = SCRIPT_DIR.parent.parent
@@ -43,9 +42,16 @@ def print_target_directory():
     print(f"📁 Target: {TARGET_DIR}")
 
 
-def verify_source_directory():
-    if not AI_PLAYBOOK_SOURCE.exists():
+def verify_directories():
+    # Mirror Bash's extra safety checks
+    # Source exists and isn’t root
+    if not AI_PLAYBOOK_SOURCE.exists() or AI_PLAYBOOK_SOURCE == AI_PLAYBOOK_SOURCE.root:
         print(f"❌ Invalid source directory")
+        sys.exit(1)
+
+        # Target isn’t root
+    if TARGET_DIR == TARGET_DIR.root:
+        print("❌ Invalid target directory")
         sys.exit(1)
 
 
@@ -59,11 +65,12 @@ def delete_target_directory(deleting_message, dont_exist_message):
 
 def delete_target_standalone_files():
     for standalone_file in STANDALONE_FILES:
-        if not standalone_file.exists():
-            print(f" ⚠️ Skipping missing file: {standalone_file}")
+        standalone_target_file = TARGET_STANDALONE_FILES_DESTINATION / standalone_file.name
+        if not standalone_target_file.exists():
+            print(f" ⚠️ Skipping missing file: {standalone_target_file}")
         else:
-            print(f"  → Removing {standalone_file}")
-            standalone_file.unlink()
+            print(f"  → Removing {standalone_target_file}")
+            standalone_target_file.unlink()
 
 
 def least_one_argument_is_provided():
@@ -93,7 +100,7 @@ def copy_standalone_files():
             print(f"  ⚠️ Skipping missing file: {standalone_file}")
             continue
         print(f"  → Copying {standalone_file}")
-        shutil.copy(standalone_file, TARGET_DIR / standalone_file.name)
+        shutil.copy2(standalone_file, TARGET_STANDALONE_FILES_DESTINATION / standalone_file.name)
 
 
 def sync_playbook():
@@ -101,7 +108,7 @@ def sync_playbook():
 
     print_playbook_source()
     print_target_directory()
-    verify_source_directory()
+    verify_directories()
     delete_target_directory(f"🧹 Removing existing {TARGET_DIR}...", "")
 
     TARGET_DIR.mkdir()
