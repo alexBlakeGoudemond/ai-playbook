@@ -1,6 +1,6 @@
 # Using Custom Scripts
 
-# Using .custom-scripts:
+# Using bash scripts:
 1. Clone this repo
 2. Checkout the appropriate branch, for example: `dev`
 3. Identify the absolute path to the script you care about, for example: `C:\<pathToRepository>\ai-playbook\.custom-scripts\bin\<theBashScript>`
@@ -30,4 +30,14 @@ else
 fi
 
 bash "$TARGET" "$@"
+```
+
+# Using python scripts:
+1. Clone this repo
+2. Checkout the appropriate branch, for example: `dev`
+3. Add the `bin` directory to your environment variables, for example: `C:\<pathToRepository>\ai-playbook\.custom-scripts\bin`
+4. Run the script as follows:
+
+```bash
+<scriptName>.py <arg1> <arg2>
 ```
