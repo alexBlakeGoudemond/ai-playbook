@@ -2,7 +2,7 @@
 
 ## General
 
-- Prefer readability over brevity
+- Prefer readability to brevity
 - Avoid magic values
 - Use explicit naming
 - Use UTF-8 Encoding
@@ -32,9 +32,16 @@
     - numbered steps
 - When generating code:
     - If you are permitted to make code changes (for example, in a mode like `CODE`, `AGENT`, etc) then before making
-      any changes, summarise your thoughts and plan and ask to the user to approve BEFORE starting anything. This must
+      any changes, summarize your thoughts and plan and ask the user to approve BEFORE starting anything. This must
       be done every time
         - It is recommended to include a prefix like `[ai-playbook-instruction]` at the front, so the reader does not
           forget that this is a rule you are being told to follow
     - include a brief explanation
     - avoid unnecessary abstraction
+    - If you would like to perform any of the following version control commands, you MUST ask the use before doing so:
+      - git add
+      - git commit
+      - git push
+      - git pull
+      - git merge
+      - git rebase
