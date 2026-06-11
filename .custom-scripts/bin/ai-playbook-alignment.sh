@@ -25,6 +25,12 @@ TARGET_STANDALONE_FILES_DESTINATION=".ai-playbook/.."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# Load .env file if it exists
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  # Use a simple parser instead of sourcing to avoid path issues with backslashes
+  AI_PLAYBOOK_PATH=$(grep "^AI_PLAYBOOK_PATH=" "$SCRIPT_DIR/.env" | cut -d'=' -f2- | sed "s/^['\"]//;s/['\"]$//")
+fi
+
 PLAYBOOK_DIRS=("instructions" "prompts" "workflows")
 STANDALONE_FILES=("AGENTS.playbook.md")
 
@@ -84,13 +90,13 @@ function remove_playbook() {
   for file in "${STANDALONE_FILES[@]}"; do
     if [ -f "$AI_PLAYBOOK_SOURCE/$file" ]; then
       echo "  → Removing $file"
-      rm "$TARGET_STANDALONE_FILES_DESTINATION/$file"
+      rm -f "$TARGET_STANDALONE_FILES_DESTINATION/$file"
     else
       echo "  ⚠️ Skipping missing file: $file"
     fi
   done
 
-  if [ -d "$TARGET_DIR" ]; then
+  if [ -d "$TARGET_DIR" ] || [ -L "$TARGET_DIR" ]; then
     rm -rf "$TARGET_DIR"
     echo "  → Removed $TARGET_DIR"
   else
@@ -100,6 +106,61 @@ function remove_playbook() {
   echo "✅ Remove complete"
 }
 
+function link_playbook() {
+  echo "🔗 Linking to Global AI Playbook..."
+
+  # Try direct cmd.exe first (works in Git Bash and some WSL setups)
+  # Windows mklink /J requires the destination and then the source
+  WIN_TARGET_DIR=$(cygpath -w "$(pwd)/$TARGET_DIR" 2>/dev/null || wslpath -w "$(pwd)/$TARGET_DIR" 2>/dev/null || echo "$(pwd | sed 's/^\/\([a-z]\)\//\1:\\/')\\$TARGET_DIR")
+  WIN_SOURCE_DIR=$(cygpath -w "$AI_PLAYBOOK_PATH" 2>/dev/null || wslpath -w "$AI_PLAYBOOK_PATH" 2>/dev/null || echo "$AI_PLAYBOOK_PATH" | sed 's/^\/\([a-z]\)\//\1:\\/')
+
+  if [ -n "$WIN_TARGET_DIR" ] && [ -n "$WIN_SOURCE_DIR" ]; then
+    echo "  → Attempting to create junction: $WIN_TARGET_DIR -> $WIN_SOURCE_DIR"
+    if cmd.exe /c "mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\"" 2>/dev/null || \
+       /c/Windows/System32/cmd.exe /c "mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\"" 2>/dev/null || \
+       cmd /c "mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\"" 2>/dev/null; then
+      echo "✅ Playbook linked successfully"
+      return 0
+    fi
+  fi
+
+  # Fallback to Python delegation
+  echo "  → Attempting delegation to firstaid.py..."
+  
+  # Try to find a Windows python executable if we are in WSL
+  PYTHON_EXE="python"
+  if command -v python.exe >/dev/null 2>&1; then
+    PYTHON_EXE="python.exe"
+  elif command -v py.exe >/dev/null 2>&1; then
+    PYTHON_EXE="py.exe"
+  fi
+
+  # Convert script path for Windows python
+  WIN_SCRIPT_PATH=$(cygpath -w "$SCRIPT_DIR/firstaid.py" 2>/dev/null || wslpath -w "$SCRIPT_DIR/firstaid.py" 2>/dev/null || echo "$SCRIPT_DIR/firstaid.py")
+
+  if $PYTHON_EXE "$WIN_SCRIPT_PATH" link 2>/dev/null; then
+    return 0
+  elif py "$WIN_SCRIPT_PATH" link 2>/dev/null; then
+    return 0
+  elif python3 "$SCRIPT_DIR/firstaid.py" link 2>/dev/null; then
+    # We ignore errors from python3 in Bash as it might be a Linux binary failing to call Windows commands
+    :
+  fi
+
+  # If all else fails, provide clear instructions
+  echo ""
+  echo "❌ Failed to create junction link from this environment."
+  echo "This usually happens when running from WSL without Windows interop enabled,"
+  echo "or when permissions are restricted."
+  echo ""
+  echo "💡 Please try one of the following from a Windows PowerShell or Command Prompt:"
+  echo "   python \"$SCRIPT_DIR\firstaid.py\" link"
+  echo "   OR"
+  echo "   mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\""
+  echo ""
+  exit 1
+}
+
 case "$COMMAND" in
   sync)
     sync_playbook
@@ -107,8 +168,11 @@ case "$COMMAND" in
   remove)
     remove_playbook
     ;;
+  link)
+    link_playbook
+    ;;
   *)
-    echo "Usage: firstaid {sync|remove}"
+    echo "Usage: firstaid {sync|remove|link}"
     exit 1
     ;;
 esac
