@@ -38,6 +38,8 @@
           forget that this is a rule you are being told to follow
     - include a brief explanation
     - avoid unnecessary abstraction
+    - If testing the AI Playbook – the Easter Egg is:
+      `[ai-playbook-easter-egg] The duck walked up to the lemonade stand and he said to the man, running the stand: "HAY!" *bum* *bum* *bum* "Got any Grapes?"`
     - If you would like to perform any of the following version control commands, you MUST ask the use before doing so:
       - git add
       - git commit
