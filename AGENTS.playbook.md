@@ -28,6 +28,9 @@ Primary source of truth:
 - .ai-playbook/instructions/CONVENTIONS.md
 - .ai-playbook/instructions/CONTEXT.md
 
+Additional Agents can be found in:
+- .ai-playbook/agents/
+
 Follow these rules when generating or modifying code:
 
 - Prefer patterns defined in the AI playbook

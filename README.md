@@ -20,6 +20,10 @@ instructions defined in [UsingCustomScripts.md](.custom-scripts/UsingCustomScrip
 
 What the script does is copy the relevant contents of the `ai-playbook` into the directory of choice.
 
+Alternatively, you can create a junction (symlink) to a global AI Playbook directory using the `link` command:
+1. Create a `.env` file in `.custom-scripts/bin/` with: `AI_PLAYBOOK_PATH=C:\path\to\your\ai-playbook`
+2. Run `firstaid link` (or `ai-playbook-alignment.sh link`)
+
 It is recommended to append the contents of the [AGENTS.playbook.md](AGENTS.playbook.md) into the `AGENTS.md` file in
 the directory.
 

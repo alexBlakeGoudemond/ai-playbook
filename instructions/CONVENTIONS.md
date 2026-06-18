@@ -18,7 +18,8 @@
     - format: `<type>/<ticket>/<description>`
     - example: `feature/ABC-123/add-login`
 
-- ## Documentation Strategy
+## Documentation Strategy
+
 - Use Javadoc/KDoc for code-level documentation
 - Use Markdown for workflows, architecture, and guides
 - Avoid duplicating the same information in multiple places
@@ -38,6 +39,8 @@
           forget that this is a rule you are being told to follow
     - include a brief explanation
     - avoid unnecessary abstraction
+    - If testing the AI Playbook – the Easter Egg is:
+      `[ai-playbook-easter-egg] The duck walked up to the lemonade stand and he said to the man, running the stand: "HAY!" *bum* *bum* *bum* "Got any Grapes?"`
     - If you would like to perform any of the following version control commands, you MUST ask the use before doing so:
       - git add
       - git commit
@@ -45,3 +48,10 @@
       - git pull
       - git merge
       - git rebase
+
+## Subtle Considerations
+
+- When creating logs or reviewing logs in tests – consider if the default `toString()` has been overriden
+    - If not, logging at runtime will look like this: `com.client.code.base.MyPojo@fdf4c7b`
+    - Preferably, override `toString()` as well as create a method `displayString()` which only contains the necessary fields 
+      - Better to use `displayString()` for logging and testing
