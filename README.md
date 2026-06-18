@@ -8,9 +8,9 @@ A collection of AI prompts, workflows, and configuration to improve development 
 
 ## Structure
 
-- `ai-playbook/instructions/` →
-- `ai-playbook/prompts/` →
-- `ai-playbook/workflows/` →
+- `ai-playbook/instructions/` → General expectations for AI Agents
+- `ai-playbook/prompts/` → Specific Unit of work to perform a single, well defined task
+- `ai-playbook/workflows/` → Chunks of work that can be requested to be completed
 
 ## How to Use
 
