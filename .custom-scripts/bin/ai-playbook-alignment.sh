@@ -3,8 +3,12 @@
 # --------------------------------------------------------------------------------------------------------
 # ai-playbook-alignment: bring markdown files from a source directory to a target directory, with sync and status features
 # For fun, we named this little tool as `firstaid` because it assists in keeping your repository healthy and up-to-date!
-# Usage: firstaid sync
-# Usage: firstaid remove
+# Usage: firstaid sync                          # default directory: .ai-playbook
+# Usage: firstaid sync -n .ai-playbook-global   # custom-named directory: .ai-playbook-global
+# Usage: firstaid remove                        # remove default named directory
+# Usage: firstaid remove -n .ai-playbook-global # remove custom-named directory
+# Usage: firstaid link                          # create a junction link to a playbook defined by AI_PLAYBOOK_PATH in .env
+# Usage: firstaid link -n .ai-playbook-global   # create a junction link with custom name
 #
 # Bash insights:
 # - has custom defined functions which are invoked without parentheses, for example: `sync`
@@ -19,7 +23,27 @@ echo "🚑  FirstAid $ALIAS_VERSION — AI Playbook ⚕️"
 echo "───────────────────────────────────────────────────────────────"
 
 COMMAND=$1
+shift # move past the command name so we can parse flags
+
 TARGET_DIR=".ai-playbook"
+
+# Parse optional flags (available for all commands)
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -n|--name)
+      if [[ -z "${2:-}" ]]; then
+        echo "❌ -n / --name requires a value"
+        exit 1
+      fi
+      TARGET_DIR="$2"
+      shift 2
+      ;;
+    *)
+      echo "⚠️  Unknown option: $1"
+      shift
+      ;;
+  esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -308,7 +332,7 @@ case "$COMMAND" in
     link_playbook
     ;;
   *)
-    echo "Usage: firstaid {sync|remove|link}"
+    echo "Usage: firstaid {sync|remove|link} [-n <target-dir-name>]"
     exit 1
     ;;
 esac

@@ -8,6 +8,7 @@ import shutil
 import sys
 import os
 import subprocess
+import argparse
 from pathlib import Path
 
 # Ensure UTF-8 output on Windows
@@ -37,8 +38,7 @@ def _get_work_dir() -> Path:
 
 
 WORK_DIR = _get_work_dir()
-TARGET_DIR = WORK_DIR / ".ai-playbook"
-TARGET_STANDALONE_FILES_DESTINATION = WORK_DIR
+# TARGET_DIR and TARGET_STANDALONE_FILES_DESTINATION are set after arg-parsing below.
 AI_PLAYBOOK_PATH = None
 
 # Load .env file
@@ -139,18 +139,6 @@ def delete_target_standalone_files():
         else:
             print(f"  → Removing {standalone_target_file}")
             standalone_target_file.unlink()
-
-
-def least_one_argument_is_provided():
-    return len(sys.argv) > 1  # First argument is the script name
-
-
-def get_first_argument():
-    return sys.argv[1]
-
-
-def print_usage():
-    print("Usage: firstaid {sync|remove|link}")
 
 
 def copy_playbook():
@@ -291,13 +279,38 @@ def link_playbook():
     print_end_banner()
 
 
-if __name__ == "__main__":
-    if not least_one_argument_is_provided():
-        print_usage()
-        sys.exit(1)
-    command = get_first_argument()
+def print_usage():
 
-    match command:
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog='firstaid',
+        description='AI Playbook alignment tool',
+    )
+    subparsers = parser.add_subparsers(dest='command', metavar='{sync|remove|link}')
+
+    _name_help = 'Target directory name (default: .ai-playbook)'
+
+    p_sync = subparsers.add_parser('sync', help='Copy playbook into the repo')
+    p_sync.add_argument('-n', '--name', default='.ai-playbook', metavar='DIR', help=_name_help)
+
+    p_remove = subparsers.add_parser('remove', help='Remove playbook from the repo')
+    p_remove.add_argument('-n', '--name', default='.ai-playbook', metavar='DIR', help=_name_help)
+
+    p_link = subparsers.add_parser('link', help='Create a junction to the global playbook')
+    p_link.add_argument('-n', '--name', default='.ai-playbook', metavar='DIR', help=_name_help)
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    # Set globals that depend on the chosen target name
+    TARGET_DIR = WORK_DIR / args.name
+    TARGET_STANDALONE_FILES_DESTINATION = WORK_DIR
+
+    match args.command:
         case 'sync':
             sync_playbook()
         case 'remove':
@@ -305,5 +318,5 @@ if __name__ == "__main__":
         case 'link':
             link_playbook()
         case _:
-            print_usage()
+            parser.print_help()
             sys.exit(1)
