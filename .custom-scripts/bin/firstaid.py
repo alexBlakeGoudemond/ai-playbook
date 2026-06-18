@@ -43,6 +43,7 @@ if env_file.exists():
 PLAYBOOK_DIRS = [AI_PLAYBOOK_SOURCE / "instructions",
                  AI_PLAYBOOK_SOURCE / "prompts",
                  AI_PLAYBOOK_SOURCE / "agents",
+                 AI_PLAYBOOK_SOURCE / "skills",
                  AI_PLAYBOOK_SOURCE / "workflows"]
 STANDALONE_FILES = [AI_PLAYBOOK_SOURCE / "AGENTS.playbook.md"]
 

@@ -38,7 +38,7 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
   fi
 fi
 
-PLAYBOOK_DIRS=("instructions" "prompts" "workflows" "agents")
+PLAYBOOK_DIRS=("instructions" "prompts" "workflows" "agents" "skills")
 STANDALONE_FILES=("AGENTS.playbook.md")
 
 function sync_playbook() {
