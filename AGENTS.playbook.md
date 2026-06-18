@@ -31,6 +31,9 @@ Primary source of truth:
 Additional Agents can be found in:
 - .ai-playbook/agents/
 
+Additional Skills can be found in:
+- .ai-playbook/skills/
+
 Follow these rules when generating or modifying code:
 
 - Prefer patterns defined in the AI playbook
