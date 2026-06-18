@@ -24,6 +24,7 @@ Common conventions, resources, skills etc can be drawn from a single place. It d
 Claude, ChatGPT, etc - they can all have the same shared resources.
 
 Having a playbook also prevents needing to reinvent the wheel by inserting into:
+
 - `.agents/`
 - `.claude/`
 - `.github/`
@@ -33,4 +34,39 @@ Having a playbook also prevents needing to reinvent the wheel by inserting into:
 
 ## Bests Practices
 
-TBD
+### Playbook Placement
+
+There are currently a few strategies for using the playbook:
+
+- (Local) Bring a copy into every project
+    - Pros: can track with version control; can be edited and become unique to repo
+    - Cons: it needs to be copied into every project and updated in every project when changes are made
+- (Global) Have a single playbook loaded onto the machine, and link projects to it
+    - Pros: only one playbook to maintain and update; can be used across all projects
+    - Cons: cannot become unique to repo
+- Combine the Global and Local strategies
+    - Pros: Benefit from using the Global Playbook and then have more tailored Local Playbooks for each project
+    - Cons: more work to maintain both Global and Local Playbooks; need to ensure consistency between them
+
+> To achieve a mixture of Global and Local strategies, it is recommended to use a symlink to the Global Playbook and
+> then dedicated directories for the additional local playbooks. This will appear as two directories in the IDE, and
+> allow the AI tools to navigate to the resources, especially if the Global Playbook is in your `<users>` directory
+
+### Playbook Usage
+
+The AI Tools that have been tested so far have different settings and default behavior.
+
+> For example, as of 2026-06-18, not all AI tools default to read AGENTS.md in every prompt (notable Jetbrains Junie)
+
+A reliable method to ensure the playbook is being used is to write down the basic rules in one file (perhaps AGENTS.md),
+and then for each prompt you explicitly state that the instructions in the AGENTS.md file should be used.
+
+> NOTE:
+> Transitive lookups do not appear to be supported by all AI Tools
+> For example, this 'hopping' of rules, as of 2026-06-18, is not reliable:
+> `AGENTS.md -> AGENTS.playbook.md -> .ai-playbook/INSTRUCTIONS.md / .ai-playbook/CONVENTIONS.md / ...`
+> However a single redirect does appear to work:
+> `AGENTS.md -> .ai-playbook/INSTRUCTIONS.md / .ai-playbook/CONVENTIONS.md / ...`
+
+The contents of the playbook can then be referenced in the prompt, and expected behaviour defined there can be expected
+to work.
