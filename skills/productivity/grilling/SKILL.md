@@ -1,9 +1,10 @@
 ---
 name: grilling
 description: Interview the user relentlessly about a plan or design. Use when the user wants to stress-test a plan before building, or uses any 'grill' trigger phrases.
+disable-model-invocation: true
 author: mattpocock (Matt Pocock)
 adapted_by: alexBlakeGoudemond (Alex Blake-Goudemond)
-source: https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md
+source: https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md
 license: MIT
 ---
 
