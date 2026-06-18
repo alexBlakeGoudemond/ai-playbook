@@ -20,10 +20,23 @@ echo "────────────────────────�
 
 COMMAND=$1
 TARGET_DIR=".ai-playbook"
-TARGET_STANDALONE_FILES_DESTINATION=".ai-playbook/.."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_PLAYBOOK_SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Resolve the working directory: prefer the Git repo root so the command works
+# correctly regardless of which subdirectory it is invoked from.
+if git -C "$(pwd)" rev-parse --show-toplevel >/dev/null 2>&1; then
+  WORK_DIR="$(git -C "$(pwd)" rev-parse --show-toplevel)"
+else
+  WORK_DIR="$(pwd)"
+fi
+
+TARGET_STANDALONE_FILES_DESTINATION="$WORK_DIR"
+
+# Change into the repo root so all relative paths (TARGET_DIR etc.) resolve correctly
+cd "$WORK_DIR"
+echo "📂 Working directory: $WORK_DIR"
 
 # Load .env file if it exists
 if [ -f "$SCRIPT_DIR/.env" ]; then
@@ -137,11 +150,43 @@ function link_playbook() {
     echo "$path"
   }
 
-  WIN_TARGET_DIR=$(cygpath -w "$(pwd)/$TARGET_DIR" 2>/dev/null || wslpath -w "$(pwd)/$TARGET_DIR" 2>/dev/null || echo "$(pwd | sed 's/^\/\([a-z]\)\//\1:\\/')\\$TARGET_DIR")
-  WIN_SOURCE_DIR=$(cygpath -w "$AI_PLAYBOOK_PATH" 2>/dev/null || wslpath -w "$AI_PLAYBOOK_PATH" 2>/dev/null || echo "$AI_PLAYBOOK_PATH" | sed 's/^\/\([a-z]\)\//\1:\\/')
+  # Convert current directory to a Windows path
+  # pwd -W is the most reliable option in Git Bash (returns C:\... directly)
+  if WIN_CWD=$(cd "$WORK_DIR" && pwd -W 2>/dev/null) && [ -n "$WIN_CWD" ]; then
+    WIN_TARGET_DIR=$(echo "${WIN_CWD}\\${TARGET_DIR}" | sed 's|/|\\|g')
+  elif command -v wslpath >/dev/null 2>&1; then
+    WIN_TARGET_DIR=$(wslpath -w "${WORK_DIR}/${TARGET_DIR}" 2>/dev/null)
+  elif command -v cygpath >/dev/null 2>&1; then
+    WIN_TARGET_DIR=$(cygpath -w "${WORK_DIR}/${TARGET_DIR}" 2>/dev/null)
+  else
+    WIN_TARGET_DIR="$(echo "$WORK_DIR" | sed 's|^/\([a-zA-Z]\)/|\1:\\|')\\${TARGET_DIR}"
+  fi
+
+  # If AI_PLAYBOOK_PATH is already a Windows path (C:\... or C:/...), use it directly
+  # This avoids cygpath/wslpath mangling an already-correct Windows path
+  if echo "$AI_PLAYBOOK_PATH" | grep -qE '^[A-Za-z]:[/\\]'; then
+    WIN_SOURCE_DIR=$(echo "$AI_PLAYBOOK_PATH" | sed 's|/|\\|g')
+  elif command -v wslpath >/dev/null 2>&1; then
+    WIN_SOURCE_DIR=$(wslpath -w "$AI_PLAYBOOK_PATH" 2>/dev/null)
+  elif command -v cygpath >/dev/null 2>&1; then
+    WIN_SOURCE_DIR=$(cygpath -w "$AI_PLAYBOOK_PATH" 2>/dev/null)
+  else
+    WIN_SOURCE_DIR=$(echo "$AI_PLAYBOOK_PATH" | sed 's|^/\([a-zA-Z]\)/|\1:\\|')
+  fi
 
   WIN_TARGET_DIR=$(clean_win_path "$WIN_TARGET_DIR")
   WIN_SOURCE_DIR=$(clean_win_path "$WIN_SOURCE_DIR")
+
+  # Sanity check: make sure the two paths are not identical
+  if [ "$WIN_TARGET_DIR" = "$WIN_SOURCE_DIR" ]; then
+    echo "❌ Path resolution error: target and source resolved to the same path."
+    echo "   WIN_TARGET_DIR: $WIN_TARGET_DIR"
+    echo "   WIN_SOURCE_DIR: $WIN_SOURCE_DIR"
+    echo "   CWD (unix): $(pwd)"
+    echo "   CWD (windows): ${WIN_CWD:-n/a}"
+    echo "   AI_PLAYBOOK_PATH: $AI_PLAYBOOK_PATH"
+    exit 1
+  fi
 
   echo "🔗 Linking to Global AI Playbook: $AI_PLAYBOOK_PATH"
   echo "📁 Target: $TARGET_DIR"
@@ -153,59 +198,100 @@ function link_playbook() {
 
   echo "  → Creating junction: $WIN_TARGET_DIR -> $WIN_SOURCE_DIR"
 
-  # Define potential cmd.exe paths
-  CMD_PATHS=(
-    "cmd.exe"
-    "cmd"
-    "/mnt/c/Windows/System32/cmd.exe"
-    "/c/Windows/System32/cmd.exe"
-    "C:/Windows/System32/cmd.exe"
+  LINK_SUCCESS=false
+
+  # -----------------------------------------------------------------
+  # Method 1: Write a temp .ps1 file to C:\Windows\Temp and execute
+  # with -File.  This completely sidesteps quoting/escaping problems
+  # that occur when passing Windows paths through -Command in WSL.
+  # -----------------------------------------------------------------
+  WIN_TMPDIR="/mnt/c/Windows/Temp"
+  TMPSCRIPT=""
+  WIN_TMPSCRIPT=""
+  if [ -d "$WIN_TMPDIR" ]; then
+    TMPSCRIPT="$WIN_TMPDIR/firstaid_$$.ps1"
+    WIN_TMPSCRIPT="C:\\Windows\\Temp\\firstaid_$$.ps1"
+    printf "New-Item -ItemType Junction -Path '%s' -Target '%s' -ErrorAction Stop | Out-Null\n" \
+      "$WIN_TARGET_DIR" "$WIN_SOURCE_DIR" > "$TMPSCRIPT" 2>/dev/null || TMPSCRIPT=""
+  fi
+
+  PS_PATHS=(
+    "powershell.exe"
+    "pwsh.exe"
+    "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+    "/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
   )
 
-  LINK_SUCCESS=false
-  for cmd_path in "${CMD_PATHS[@]}"; do
-    if command -v "$cmd_path" >/dev/null 2>&1; then
-      # Try without quotes first, then with quotes if it fails
-      if "$cmd_path" /c "mklink /J $WIN_TARGET_DIR $WIN_SOURCE_DIR" >/dev/null 2>&1; then
-        LINK_SUCCESS=true
-        break
-      elif "$cmd_path" /c "mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\"" >/dev/null 2>&1; then
+  for ps_path in "${PS_PATHS[@]}"; do
+    # Prefer -File (temp script) — no quoting issues
+    if [ -n "$TMPSCRIPT" ] && [ -f "$TMPSCRIPT" ]; then
+      if "$ps_path" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$WIN_TMPSCRIPT" >/dev/null 2>&1; then
         LINK_SUCCESS=true
         break
       fi
     fi
+    # Fallback: -Command inline
+    if "$ps_path" -NoProfile -NonInteractive -Command \
+        "New-Item -ItemType Junction -Path '$WIN_TARGET_DIR' -Target '$WIN_SOURCE_DIR' -ErrorAction Stop | Out-Null" \
+        >/dev/null 2>&1; then
+      LINK_SUCCESS=true
+      break
+    fi
   done
 
+  [ -n "$TMPSCRIPT" ] && rm -f "$TMPSCRIPT" 2>/dev/null
+
   if [ "$LINK_SUCCESS" = true ]; then
-    echo "✅ Playbook linked successfully"
+    echo "✅ Playbook linked successfully (via powershell)"
     return 0
   fi
 
-  # Fallback to Python bridge but ONLY for the mklink command to avoid double headers
-  PYTHON_EXE=""
-  if command -v python.exe >/dev/null 2>&1; then PYTHON_EXE="python.exe";
-  elif command -v py.exe >/dev/null 2>&1; then PYTHON_EXE="py.exe";
-  elif command -v python >/dev/null 2>&1; then PYTHON_EXE="python";
-  elif command -v python3 >/dev/null 2>&1; then PYTHON_EXE="python3"; fi
+  # -----------------------------------------------------------------
+  # Method 2: cmd.exe mklink
+  # -----------------------------------------------------------------
+  CMD_PATHS=(
+    "cmd.exe"
+    "/mnt/c/Windows/System32/cmd.exe"
+    "/c/Windows/System32/cmd.exe"
+  )
 
-  if [ -n "$PYTHON_EXE" ]; then
-    # Try with raw strings and escaping
-    if $PYTHON_EXE -c "import subprocess; subprocess.run(['cmd', '/c', 'mklink', '/J', r'$WIN_TARGET_DIR', r'$WIN_SOURCE_DIR'], check=True)" >/dev/null 2>&1; then
-      echo "✅ Playbook linked successfully (via python bridge)"
-      return 0
-    elif $PYTHON_EXE -c "import subprocess; subprocess.run('cmd /c mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\"', check=True, shell=True)" >/dev/null 2>&1; then
-      echo "✅ Playbook linked successfully (via python shell bridge)"
-      return 0
+  for cmd_path in "${CMD_PATHS[@]}"; do
+    if "$cmd_path" /c "mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\"" >/dev/null 2>&1; then
+      LINK_SUCCESS=true
+      break
     fi
+  done
+
+  if [ "$LINK_SUCCESS" = true ]; then
+    echo "✅ Playbook linked successfully (via cmd)"
+    return 0
   fi
 
-  # If all else fails, provide clear instructions
+  # -----------------------------------------------------------------
+  # Method 3: Unix symlink (works on WSL DrvFs with metadata enabled)
+  # -----------------------------------------------------------------
+  UNIX_SOURCE=""
+  if command -v wslpath >/dev/null 2>&1; then
+    UNIX_SOURCE=$(wslpath -u "$WIN_SOURCE_DIR" 2>/dev/null)
+  fi
+  if [ -n "$UNIX_SOURCE" ] && ln -s "$UNIX_SOURCE" "$TARGET_DIR" 2>/dev/null; then
+    echo "✅ Playbook linked successfully (via symlink)"
+    return 0
+  fi
+
+  # -----------------------------------------------------------------
+  # All methods failed — provide manual instructions
+  # -----------------------------------------------------------------
   echo ""
   echo "❌ Failed to create junction link from this environment."
   echo "This usually happens when running from WSL without Windows interop enabled,"
   echo "or when permissions are restricted."
   echo ""
-  echo "💡 Please try one of the following from a Windows PowerShell or Command Prompt:"
+  echo "💡 Please run one of the following manually:"
+  echo "   # PowerShell:"
+  echo "   New-Item -ItemType Junction -Path \"$WIN_TARGET_DIR\" -Target \"$WIN_SOURCE_DIR\""
+  echo ""
+  echo "   # Command Prompt:"
   echo "   mklink /J \"$WIN_TARGET_DIR\" \"$WIN_SOURCE_DIR\""
   echo ""
   exit 1

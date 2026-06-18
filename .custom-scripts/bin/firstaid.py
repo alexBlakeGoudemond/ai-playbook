@@ -20,10 +20,25 @@ if sys.platform == "win32":
 
 ALIAS_VERSION = "1.0.0"
 
-TARGET_DIR = Path.cwd() / ".ai-playbook"
-TARGET_STANDALONE_FILES_DESTINATION = TARGET_DIR.parent
 SCRIPT_DIR = Path(__file__).parent.resolve()
 AI_PLAYBOOK_SOURCE = SCRIPT_DIR.parent.parent
+
+
+def _get_work_dir() -> Path:
+    """Return the git repo root, falling back to cwd."""
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--show-toplevel'],
+            capture_output=True, text=True, check=True,
+        )
+        return Path(result.stdout.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return Path.cwd()
+
+
+WORK_DIR = _get_work_dir()
+TARGET_DIR = WORK_DIR / ".ai-playbook"
+TARGET_STANDALONE_FILES_DESTINATION = WORK_DIR
 AI_PLAYBOOK_PATH = None
 
 # Load .env file
@@ -192,32 +207,87 @@ def link_playbook():
     print(f"🔗 Linking to Global AI Playbook: {AI_PLAYBOOK_PATH}")
     print(f"📁 Target: {TARGET_DIR}")
 
-    delete_target_directory(f"🧹 Removing existing {TARGET_DIR}...", "")
+    delete_target_directory(f"  → Removing existing {TARGET_DIR}...", "")
 
-    print(f"  → Creating junction: {TARGET_DIR} -> {AI_PLAYBOOK_PATH}")
+    target_abs = str(TARGET_DIR.absolute())
+    # AI_PLAYBOOK_PATH is already a Windows path from .env; normalise slashes
+    source_abs = str(Path(AI_PLAYBOOK_PATH))
+
+    print(f"  → Creating junction: {target_abs} -> {source_abs}")
+
+    linked = False
+
+    # ------------------------------------------------------------------
+    # Method 1: PowerShell New-Item -ItemType Junction via temp .ps1 file
+    # Writing to a temp file avoids all quoting / backslash-escaping issues
+    # when passing Windows paths through subprocess arguments.
+    # ------------------------------------------------------------------
+    tmp_ps1 = None
     try:
-        # Use cmd /c mklink /J for Windows directory junction
-        # We use absolute paths to be safe, and try both shell=True and shell=False
-        target_abs = str(TARGET_DIR.absolute())
-        source_abs = str(Path(AI_PLAYBOOK_PATH).absolute())
-        
-        # If we are on Windows, we should use cmd /c mklink
-        if sys.platform == "win32":
-            subprocess.run(f'cmd /c mklink /J "{target_abs}" "{source_abs}"', check=True, shell=True)
-        else:
-            # On non-windows (WSL python3), this will likely fail if it's linux python
-            # but we can try to call cmd.exe if it's available in PATH
+        import tempfile
+        tmp_dir = r'C:\Windows\Temp' if sys.platform == "win32" else None
+        ps_cmd = f"New-Item -ItemType Junction -Path '{target_abs}' -Target '{source_abs}' -ErrorAction Stop | Out-Null\n"
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.ps1',
+                                        dir=tmp_dir, delete=False) as f:
+            f.write(ps_cmd)
+            tmp_ps1 = f.name
+
+        for ps_exe in ['powershell.exe', 'pwsh.exe']:
             try:
-                subprocess.run(['cmd.exe', '/c', 'mklink', '/J', target_abs, source_abs], check=True)
-            except (OSError, subprocess.CalledProcessError):
-                # If cmd.exe failed, try ln -s as last resort (though the user wants junction)
-                os.symlink(source_abs, target_abs, target_is_directory=True)
-        
-        print("✅ Playbook linked successfully")
-    except subprocess.CalledProcessError:
-        print("❌ Failed to create symlink. You might need to run this as Administrator or enable Developer Mode.")
+                subprocess.run(
+                    [ps_exe, '-NoProfile', '-NonInteractive',
+                     '-ExecutionPolicy', 'Bypass', '-File', tmp_ps1],
+                    check=True, capture_output=True,
+                )
+                linked = True
+                break
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                continue
+    except Exception:
+        pass
+    finally:
+        if tmp_ps1:
+            try:
+                os.unlink(tmp_ps1)
+            except OSError:
+                pass
+
+    # ------------------------------------------------------------------
+    # Method 2: cmd.exe mklink /J
+    # ------------------------------------------------------------------
+    if not linked:
+        for cmd_exe in (['cmd.exe'] if sys.platform == "win32" else
+                        ['cmd.exe', '/mnt/c/Windows/System32/cmd.exe']):
+            try:
+                subprocess.run(
+                    f'"{cmd_exe}" /c mklink /J "{target_abs}" "{source_abs}"',
+                    check=True, shell=True, capture_output=True,
+                )
+                linked = True
+                break
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                continue
+
+    # ------------------------------------------------------------------
+    # Method 3: Unix symlink (WSL / Git Bash with DrvFs metadata)
+    # ------------------------------------------------------------------
+    if not linked:
+        try:
+            os.symlink(source_abs, target_abs, target_is_directory=True)
+            linked = True
+        except OSError:
+            pass
+
+    if not linked:
+        print("❌ Failed to create junction link.")
+        print("💡 Please run one of the following manually:")
+        print(f'   # PowerShell:')
+        print(f'   New-Item -ItemType Junction -Path "{target_abs}" -Target "{source_abs}"')
+        print(f'   # Command Prompt:')
+        print(f'   mklink /J "{target_abs}" "{source_abs}"')
         sys.exit(1)
 
+    print("✅ Playbook linked successfully")
     print_end_banner()
 
 
