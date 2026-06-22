@@ -34,6 +34,15 @@ Having a playbook also prevents needing to reinvent the wheel by inserting into:
 
 ## Bests Practices
 
+### Delegation
+
+This playbook has been designed to delegate where possible. In particular:
+
+- The user can invoke a [prompt](prompts) – a repeatable question for the AI Tool to answer
+- The Prompt delegates to a [workflow](workflows) – the sequence of steps for the AI Tool to follow
+- The Workflow delegates to a [skill](skills) – additional considerations for the AI Tool to consider
+- The Skill may delegate to a [guardrail](guardrails) – rules to consider to be consistent across requests
+
 ### Playbook Placement
 
 There are currently a few strategies for using the playbook:
