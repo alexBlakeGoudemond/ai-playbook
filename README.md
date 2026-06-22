@@ -1,6 +1,7 @@
 # ai-playbook
 
-Have all your AI configurations, conventions, workflows, defined prompts etc. in 1 place
+Have all your AI configurations, conventions, workflows, defined prompts, etc. in one place. Then, any AI tool can use
+it!
 
 ## Purpose
 
