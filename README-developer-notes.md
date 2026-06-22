@@ -34,6 +34,26 @@ Having a playbook also prevents needing to reinvent the wheel by inserting into:
 
 ## Bests Practices
 
+### Resource Conventions
+
+Resources that the AI Tool can read may leverage YAML FrontMatter to encode metadata about the resource.
+Examples of the metadata keys include:
+
+| FrontMatter Key            | Description                                                                     |
+|----------------------------|---------------------------------------------------------------------------------|
+| `name`                     | Shorthand file name                                                             |
+| `description`              | A brief description of the resource                                             |
+| `disable-model-invocation` | Cannot be invoked by an AI Agent - must be invoked by a human                   |
+| `adapted-by`               | The person who copied / drew inspiration from the author                        |
+| `source`                   | If copied from an author - where is that resource located                       |
+| `license`                  | The License associated with the Author's resource                               |
+| `argument-hint`            | When is this resource best used?                                                |
+| `workflow`                 | AI-Driven sequence of events                                                    |
+| `skills`                   | AI-Driven resource used to extend what the AI can do                            |
+| `guardrails`               | AI-Driven guidelines / rules to ensure consistency                              |
+| `applies-when`             | Assists AI Tool to identify when a resource should be considered                |
+| `requires`                 | Assists AI Tool to identify what needs to exist before the resource can be used |
+
 ### Delegation
 
 This playbook has been designed to delegate where possible. In particular:
