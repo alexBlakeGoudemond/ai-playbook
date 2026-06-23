@@ -4,7 +4,7 @@ description: Compact the current conversation into a handoff document for anothe
 disable-model-invocation: true
 argument-hint: "What will the next session be used for?"
 author: mattpocock (Matt Pocock)
-adapted_by: alexBlakeGoudemond (Alex Blake-Goudemond)
+adapted-by: alexBlakeGoudemond (Alex Blake-Goudemond)
 source: https://github.com/mattpocock/skills/blob/main/skills/productivity/handoff/SKILL.md
 license: MIT
 ---

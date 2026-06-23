@@ -186,12 +186,40 @@ def remove_playbook():
     print_end_banner()
 
 
+def _is_wsl() -> bool:
+    """Return True when running inside Windows Subsystem for Linux."""
+    try:
+        with open('/proc/version', 'r') as f:
+            return 'microsoft' in f.read().lower()
+    except OSError:
+        return False
+
+
+def _win_path_to_wsl(win_path: str) -> str:
+    """Convert a Windows-style path (C:\\foo\\bar) to a WSL path (/mnt/c/foo/bar)."""
+    try:
+        result = subprocess.run(
+            ['wslpath', win_path],
+            capture_output=True, text=True, check=True,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        import re
+        m = re.match(r'^([A-Za-z]):[/\\](.*)', win_path)
+        if m:
+            drive = m.group(1).lower()
+            rest = m.group(2).replace('\\', '/')
+            return f'/mnt/{drive}/{rest}'
+        return win_path
+
+
 def link_playbook():
     if not AI_PLAYBOOK_PATH:
         print(f"❌ AI_PLAYBOOK_PATH is not defined. Please create a .env file in {SCRIPT_DIR} with AI_PLAYBOOK_PATH=<path>")
         sys.exit(1)
 
     print_start_banner()
+    print(f"📂 Working directory: {WORK_DIR}")
     print(f"🔗 Linking to Global AI Playbook: {AI_PLAYBOOK_PATH}")
     print(f"📁 Target: {TARGET_DIR}")
 
@@ -201,7 +229,18 @@ def link_playbook():
     # AI_PLAYBOOK_PATH is already a Windows path from .env; normalise slashes
     source_abs = str(Path(AI_PLAYBOOK_PATH))
 
-    print(f"  → Creating junction: {target_abs} -> {source_abs}")
+    # When running in WSL, convert Windows paths to WSL-compatible paths so that
+    # the Unix symlink (Method 3 fallback) resolves correctly inside WSL.
+    running_in_wsl = _is_wsl()
+    if running_in_wsl:
+        import re
+        if re.match(r'^[A-Za-z]:[/\\]', source_abs):
+            source_abs = _win_path_to_wsl(source_abs)
+        if re.match(r'^[A-Za-z]:[/\\]', target_abs):
+            target_abs = _win_path_to_wsl(target_abs)
+
+    link_type = "symlink" if running_in_wsl or sys.platform != "win32" else "junction"
+    print(f"  → Creating {link_type}: {target_abs} -> {source_abs}")
 
     linked = False
 
@@ -275,7 +314,7 @@ def link_playbook():
         print(f'   mklink /J "{target_abs}" "{source_abs}"')
         sys.exit(1)
 
-    print("✅ Playbook linked successfully")
+    print(f"✅ Playbook linked successfully (via {link_type})")
     print_end_banner()
 
 

@@ -175,8 +175,10 @@ function link_playbook() {
   }
 
   # Convert current directory to a Windows path
-  # pwd -W is the most reliable option in Git Bash (returns C:\... directly)
-  if WIN_CWD=$(cd "$WORK_DIR" && pwd -W 2>/dev/null) && [ -n "$WIN_CWD" ]; then
+  # pwd -W works in Git Bash and returns C:\... directly.
+  # In WSL, pwd -W silently returns the Unix path (/mnt/c/...) so we must
+  # validate the result actually looks like a Windows drive path before using it.
+  if WIN_CWD=$(cd "$WORK_DIR" && pwd -W 2>/dev/null) && echo "$WIN_CWD" | grep -qE '^[A-Za-z]:[/\\]'; then
     WIN_TARGET_DIR=$(echo "${WIN_CWD}\\${TARGET_DIR}" | sed 's|/|\\|g')
   elif command -v wslpath >/dev/null 2>&1; then
     WIN_TARGET_DIR=$(wslpath -w "${WORK_DIR}/${TARGET_DIR}" 2>/dev/null)
