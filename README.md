@@ -9,9 +9,12 @@ A collection of AI prompts, workflows, and configuration to improve development 
 
 ## Structure
 
+- `ai-playbook/agents/` → AI Personas
 - `ai-playbook/instructions/` → General expectations for AI Agents
-- `ai-playbook/prompts/` → Specific Unit of work to perform a single, well defined task
-- `ai-playbook/workflows/` → Chunks of work that can be requested to be completed
+- `ai-playbook/prompts/` → Specific Unit of work to perform a single, well-defined task
+- `ai-playbook/workflows/` → Outline the sequence of steps to perform a specific prompt
+- `ai-playbook/skills/` → Further instructions for AI Agents to perform a specific task
+- `ai-playbook/guardrails/` → Rules to follow when performing a specific task
 
 ## How to Use
 
@@ -22,7 +25,7 @@ instructions defined in [UsingCustomScripts.md](.custom-scripts/UsingCustomScrip
 What the script does is copy the relevant contents of the `ai-playbook` into the directory of choice.
 
 Alternatively, you can create a junction (symlink) to a global AI Playbook directory using the `link` command:
-1. Create a `.env` file in `.custom-scripts/bin/` with: `AI_PLAYBOOK_PATH=C:\path\to\your\ai-playbook`
+1. Create a `.env` file in `.custom-scripts/bin/` with: `AI_PLAYBOOK_PATH=C:\path\to\your\ai-playbook` (or this repo)
 2. Run `firstaid link` (or `ai-playbook-alignment.sh link`)
 
 It is recommended to append the contents of the [AGENTS.playbook.md](AGENTS.playbook.md) into the `AGENTS.md` file in
