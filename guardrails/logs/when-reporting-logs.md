@@ -1,5 +1,5 @@
 ---
-name: when-reportion-logs
+name: when-reporting-logs
 description: Remember theses rules when reporting logs
 ---
 
