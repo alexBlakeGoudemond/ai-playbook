@@ -1,6 +1,6 @@
 ---
-name: Log Correlation
-description: Additional things that could be done to collect related logs
+name: log-correlation
+description: When analyzing logs, group related events together
 applies-when:
   - analyzing logs
   - investigating incidents

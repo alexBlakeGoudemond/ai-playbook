@@ -1,6 +1,6 @@
 ---
-name: Log Structure Analysis
-description: Additional things that could be done to learn about log structure
+name: log-structure-analysis
+description: When analyzing logs, look for structure and patterns
 applies-when:
   - analyzing logs
   - investigating incidents

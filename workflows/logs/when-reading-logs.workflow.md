@@ -1,6 +1,6 @@
 ---
-name: Reading Logs
-description: Follow this sequence to read logs
+name: when-reading-logs
+description: Remember this sequence when reading logs
 skills:
   - logs/log-anomaly-detection
   - logs/log-context-enrichment

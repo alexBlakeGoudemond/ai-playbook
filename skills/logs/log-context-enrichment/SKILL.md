@@ -1,6 +1,6 @@
 ---
-name: Log Context Enrichment
-description: Additional things that could be done to understand a log entry
+name: log-context-enrichment
+description: When analyzing logs, look at the source code
 requires:
   - source code
 applies-when:
