@@ -1,6 +1,6 @@
 ---
-name: Log Anomaly Detection
-description: Additional things that could be done to learn about problems in logs
+name: log-anomaly-detection
+description: When analyzing logs, look for noteworthy information
 applies-when:
   - analyzing logs
   - investigating incidents

@@ -1,6 +1,6 @@
 ---
-name: Log Reporting Guardrail
-description: Guidelines for reporting findings from log analysis
+name: when-reporting-logs
+description: Remember theses rules when reporting logs
 ---
 
 rules:
