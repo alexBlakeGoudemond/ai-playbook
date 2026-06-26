@@ -39,14 +39,28 @@ the hook queries `git-ai status --json` to get real-time uncommitted attribution
 
 ### Installation
 
-1. Copy `commit-msg` and `commit-msg.ps1` to your global git hooks directory:
+1. Create a custom directory for your global git hooks (e.g. `~\.git-hooks`) and add to git config:
+   `git config --global core.hooksPath C:\Users\<yourUserName>\.git-hooks`
+2. Copy [commit-msg](commit-msg) and [commit-msg.psq](commit-msg.ps1) to your global git hooks directory:
    ```sh
    cp docs/advanced-setup/commit-msg ~/.git-hooks/commit-msg
    cp docs/advanced-setup/commit-msg.ps1 ~/.git-hooks/commit-msg.ps1
    chmod +x ~/.git-hooks/commit-msg
    ```
-2. Set your global hooks path (if not already):
+3. Set your global hooks path (if not already):
    ```sh
    git config --global core.hooksPath ~/.git-hooks
    ```
-3. Ensure `git-ai` is installed and running so it writes `refs/notes/ai` during your editing sessions.
+4. Ensure `git-ai` is installed and running so it writes `refs/notes/ai` during your editing sessions.
+   `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://usegitai.com/install.ps1 | iex"`
+5. Verify installation: `git-ai log`; `git-ai status`; `git-ai blame <file>`
+6. Add `git-ai hooks`, if not prompted above: `git-ai install-hooks`
+7. Add JetBrains Marketplace Plugin `Git AI` to your IDE and Restart (even if not requested)
+8. Make a small change using AI Tool somewhere in the repo and commit it
+9. Open the repo and find `.git/refs/notes` - verify that a file called `ai` is
+   there. This contains the pointer to the git repository's internal database (metadata)
+10. Confirm that the metadata with the recent commit exists: `git log --show-notes=refs/notes/ai` (JSON)
+11. Confirm in the log 2 things: The commit description contains `<commit-msg hook> Co-authored-by: ... <ai@local>` and
+    the metadata notes are present. The metadata will not be shown in the commit description
+12. In addition to this, you should be able to find the `git-ai-hook.log` in the TEMP directory of your machine, as
+    the [commit-msg.ps1](docs/advanced-setup/commit-msg.ps1) writes there
