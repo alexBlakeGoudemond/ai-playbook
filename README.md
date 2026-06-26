@@ -46,3 +46,7 @@ To verify it is working – look for details outlined in the `.ai-playbook/instr
 > For example, [CONVENTIONS.md](./instructions/CONVENTIONS.md) mentions that before changes are made - a summary and
 > proposal must be outlined, then the user must confirm the proposal BEFORE the agent changes anything.
 > Alternatively, you can add personalities or conversation candy, such as "For the emperor!" (from Warhammer 40K)
+
+## Advanced Setup
+
+See [Advanced Setup Docs](docs/advanced-setup/README.md)
