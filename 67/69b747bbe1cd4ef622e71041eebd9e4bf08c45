@@ -1,0 +1,19 @@
+docs/advanced-setup/README.md
+  s_53530e6acfff6f::t_9737701e34ff27 10-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "6769b747bbe1cd4ef622e71041eebd9e4bf08c45",
+  "prompts": {},
+  "sessions": {
+    "s_53530e6acfff6f": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "c23da724-6e74-49ab-9f40-fde4e4e2c7c9",
+        "model": "unknown"
+      },
+      "human_author": "Alex Blake-Goudemond <alexgoudemond@gmail.com>"
+    }
+  }
+}
