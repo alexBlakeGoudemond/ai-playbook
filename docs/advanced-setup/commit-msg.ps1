@@ -92,8 +92,17 @@ try {
         $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
     }
 
+    # Fallback: parse non-human checkpoints when breakdown is empty
     if ($tools.Count -eq 0) {
-        Write-Log "AI additions found but no tool breakdown - skipping"
+        foreach ($cp in $status.checkpoints) {
+            if ($cp.is_human -or -not $cp.tool_model) { continue }
+            $tool = ($cp.tool_model -split '/')[0]
+            $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+        }
+    }
+
+    if ($tools.Count -eq 0) {
+        Write-Log "AI additions found but could not determine tool - skipping"
         exit 0
     }
 
