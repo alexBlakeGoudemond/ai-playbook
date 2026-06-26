@@ -88,7 +88,7 @@ try {
     # Determine tools: primary from breakdown, fallback from HEAD's refs/notes/ai session data
     $tools = @()
     foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
-        $tool = ($key -split '/')[0]
+        $tool = ($key -split '[/ ]')[0].ToLower()
         $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
     }
 
@@ -98,7 +98,7 @@ try {
         foreach ($cp in $status.checkpoints) {
             Write-Log "  cp: is_human=$($cp.is_human) tool_model=$($cp.tool_model) additions=$($cp.additions)"
             if ($cp.is_human -or -not $cp.tool_model) { continue }
-            $tool = ($cp.tool_model -split '/')[0]
+            $tool = ($cp.tool_model -split '[/ ]')[0].ToLower()
             $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
         }
     }
