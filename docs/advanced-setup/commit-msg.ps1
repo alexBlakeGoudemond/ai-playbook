@@ -11,7 +11,7 @@ $aiThreshold = 10
 $logPath = "$env:TEMP\git-ai-hook.log"
 
 function Write-Log($msg) {
-    Add-Content $logPath "[$(Get-Date)] $msg"
+    Add-Content $logPath "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $msg"
 }
 
 # =========================
