@@ -85,7 +85,7 @@ try {
         exit 0
     }
 
-    # Determine tools from breakdown (keys are "tool/model" or "tool")
+    # Determine tools: primary from breakdown, fallback from HEAD's refs/notes/ai session data
     $tools = @()
     foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
         $tool = ($key -split '/')[0]
@@ -100,6 +100,26 @@ try {
             if ($cp.is_human -or -not $cp.tool_model) { continue }
             $tool = ($cp.tool_model -split '/')[0]
             $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+        }
+    }
+
+    # Final fallback: read session tool from HEAD's refs/notes/ai staging note
+    if ($tools.Count -eq 0) {
+        $noteRaw = git notes --ref=refs/notes/ai show HEAD 2>$null
+        if ($noteRaw) {
+            $noteStr = ($noteRaw -join ' ').Trim()
+            $jsonPart = ($noteStr -split '\s*---\s*', 2)[-1].Trim()
+            try {
+                $noteStatus = ConvertFrom-Json $jsonPart
+                foreach ($k in $noteStatus.sessions.PSObject.Properties.Name) {
+                    $tool = $noteStatus.sessions.$k.agent_id.tool
+                    if ($tool) {
+                        $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+                    }
+                }
+            } catch {
+                Write-Log "Failed to parse HEAD note for tool info: $_"
+            }
         }
     }
 
