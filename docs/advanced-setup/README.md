@@ -7,15 +7,15 @@ contributed 10% or more of the lines in a commit.
 
 ### How it works
 
-The hook relies on [`git-ai`](https://git-ai.dev) to write line-level attribution data into `refs/notes/ai` as files are
-edited. At commit time, the hook reads those notes to determine:
+The hook relies on [`git-ai`](https://git-ai.dev) to track line-level attribution as files are edited. At commit time,
+the hook queries `git-ai status --json` to get real-time uncommitted attribution stats:
 
-1. **Which sessions were AI-assisted** — sessions with an `agent_id` in the note JSON are treated as AI contributions
-2. **What percentage of changed lines were AI-written** — calculated from the attribution ranges in the note
-3. **Which tool to credit** — mapped from the `tool` field (e.g. `github-copilot-cli` → `GitHub Copilot`, `junie` →
-   `JetBrains Junie`)
-
-If the AI contribution is **≥ 10%**, a `Co-authored-by` trailer is appended to the commit message.
+1. **AI% is calculated** from `ai_additions / (ai_additions + human_additions + unknown_additions)`
+2. **Tool identification** uses (in priority order):
+    - `tool_model_breakdown` keys in the status JSON (format: `tool/model` or `tool model`)
+    - Non-human `checkpoints` in the status JSON (`tool_model` field)
+    - Session data in HEAD's `refs/notes/ai` note as a final fallback
+3. If AI contribution is **≥ 10%**, a `Co-authored-by` trailer is appended to the commit message
 
 ### Attribution rules
 
