@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 
 param (
     [string]$MessageFile
@@ -12,54 +12,6 @@ $logPath = "$env:TEMP\git-ai-hook.log"
 
 function Write-Log($msg) {
     Add-Content $logPath "[$(Get-Date)] $msg"
-}
-
-# =========================
-# JetBrains detection
-# =========================
-function Test-IsJetBrains {
-
-    if ($env:GIT_EDITOR -eq ':') {
-        Write-Log "JetBrains fast-path (GIT_EDITOR=:)"
-        return $true
-    }
-
-    try {
-        $procs = Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId,Name,CommandLine
-        $map = @{}
-        foreach ($p in $procs) { $map[[int]$p.ProcessId] = $p }
-
-        $pid = $PID
-
-        for ($i = 0; $i -lt 8; $i++) {
-            if (-not $map.ContainsKey($pid)) { break }
-
-            $cur = $map[$pid]
-            $parentPid = [int]$cur.ParentProcessId
-            if ($parentPid -le 0 -or $parentPid -eq $pid) { break }
-            if (-not $map.ContainsKey($parentPid)) { break }
-
-            $parent = $map[$parentPid]
-            $name = $parent.Name -replace '\.exe$', ''
-            $cmd  = $parent.CommandLine
-
-            if ($name -match 'idea|webstorm|pycharm|goland|rider|clion|phpstorm|rubymine|junie|jbr') {
-                Write-Log "JetBrains match via process name"
-                return $true
-            }
-
-            if ($name -eq 'java' -and $cmd -match 'jetbrains|intellij|idea|junie|rider|webstorm|goland') {
-                Write-Log "JetBrains match via JVM cmd"
-                return $true
-            }
-
-            $pid = $parentPid
-        }
-    } catch {
-        Write-Log "JetBrains detection error: $_"
-    }
-
-    return $false
 }
 
 # =========================
@@ -174,15 +126,8 @@ try {
     $attribution = ""
 
     if (-not $noteRaw) {
-        Write-Log "No note found"
-
-        if (Test-IsJetBrains) {
-            Write-Log "Fallback: JetBrains assumed full AI"
-            $aiPercent = 100
-            $tools = @("JetBrains Junie")
-        } else {
-            exit 0
-        }
+        Write-Log "No note found - no AI credit applied"
+        exit 0
     }
     else {
         $noteStr = ($noteRaw -join ' ').Trim()
@@ -200,12 +145,8 @@ try {
         }
 
         if (-not $status.sessions) {
-            if (Test-IsJetBrains) {
-                $aiPercent = 100
-                $tools = @("JetBrains Junie")
-            } else {
-                exit 0
-            }
+            Write-Log "Note exists but has no AI sessions - no AI credit applied"
+            exit 0
         } else {
             $parsed = Parse-AiSessions $status
             $aiSessions = $parsed.Sessions
