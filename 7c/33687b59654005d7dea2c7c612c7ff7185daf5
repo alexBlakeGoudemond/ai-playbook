@@ -1,0 +1,16 @@
+docs/advanced-setup/commit-msg.ps1
+  h_1197a506f6c7d6 1-234
+docs/advanced-setup/README.md
+  h_1197a506f6c7d6 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "7c33687b59654005d7dea2c7c612c7ff7185daf5",
+  "prompts": {},
+  "humans": {
+    "h_1197a506f6c7d6": {
+      "author": "Alex Blake-Goudemond <alexgoudemond@gmail.com>"
+    }
+  }
+}
