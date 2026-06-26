@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 
 param (
     [string]$MessageFile
@@ -15,13 +15,6 @@ function Write-Log($msg) {
 }
 
 # =========================
-# Git AI note loader
-# =========================
-function Get-AiNote {
-    return git notes --ref=refs/notes/ai show HEAD 2>$null
-}
-
-# =========================
 # Tool mapping
 # =========================
 $toolMap = @{
@@ -33,69 +26,9 @@ $toolMap = @{
 }
 
 # =========================
-# Parse sessions
-# =========================
-function Parse-AiSessions($status) {
-    $aiSessions = @()
-    $tools = @()
-
-    foreach ($k in $status.sessions.PSObject.Properties.Name) {
-        $s = $status.sessions.$k
-        $agent = $s.agent_id
-
-        if (-not $agent) { continue }
-
-        $aiSessions += $k
-        $tool = $agent.tool
-
-        if ($tool) {
-            $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
-        }
-    }
-
-    return @{ Sessions = $aiSessions; Tools = $tools }
-}
-
-# =========================
-# AI % calculation
-# =========================
-function Get-AiPercent($noteAttribution, $aiSessions) {
-
-    $total = 0
-    $ai = 0
-
-    foreach ($chunk in ($noteAttribution -split '\s{3,}')) {
-        if ($chunk -notmatch '^(s_\w+)::\w+\s+(.+)$') { continue }
-
-        $session = $Matches[1]
-        $refs = $Matches[2]
-
-        $count = 0
-        foreach ($r in $refs.Split(',')) {
-            if ($r -match '^(\d+)-(\d+)$') {
-                $count += ([int]$Matches[2] - [int]$Matches[1] + 1)
-            } elseif ($r -match '^\d+$') {
-                $count++
-            }
-        }
-
-        $total += $count
-        if ($aiSessions -contains $session) { $ai += $count }
-    }
-
-    if ($total -eq 0 -and $aiSessions.Count -gt 0) { return 100 }
-
-    return if ($total -gt 0) { [math]::Round(($ai / $total) * 100) } else { 0 }
-}
-
-# =========================
 # Add trailers
 # =========================
 function Add-CoAuthors($msg, $tools) {
-
-    if ($tools.Count -eq 0) {
-        $tools = @("AI Agent")
-    }
 
     $tools | Select-Object -Unique | ForEach-Object {
         $line = "<commit-msg hook> Co-authored-by: $_ <ai@local>"
@@ -118,52 +51,55 @@ try {
     $msg = Get-Content $MessageFile -Raw
     Write-Log "Hook fired"
 
-    $noteRaw = Get-AiNote
-
-    $aiSessions = @()
-    $tools = @()
-    $aiPercent = 0
-    $attribution = ""
-
-    if (-not $noteRaw) {
-        Write-Log "No note found - no AI credit applied"
+    $statusRaw = git-ai status --json 2>$null
+    if (-not $statusRaw) {
+        Write-Log "git-ai status returned nothing - skipping"
         exit 0
     }
-    else {
-        $noteStr = ($noteRaw -join ' ').Trim()
-        $parts = $noteStr -split '\s*---\s*', 2
 
-        if ($parts.Count -lt 2) {
-            try {
-                $status = ConvertFrom-Json $noteStr
-            } catch {
-                exit 0
-            }
-        } else {
-            $attribution = $parts[0]
-            $status = ConvertFrom-Json $parts[1].Trim()
-        }
-
-        if (-not $status.sessions) {
-            Write-Log "Note exists but has no AI sessions - no AI credit applied"
-            exit 0
-        } else {
-            $parsed = Parse-AiSessions $status
-            $aiSessions = $parsed.Sessions
-            $tools = $parsed.Tools
-
-            if ($aiSessions.Count -eq 0) { exit 0 }
-
-            $aiPercent = Get-AiPercent $attribution $aiSessions
-        }
+    try {
+        $status = ConvertFrom-Json $statusRaw
+    } catch {
+        Write-Log "Failed to parse git-ai status JSON: $_"
+        exit 0
     }
 
-    Write-Log "AI%=$aiPercent tools=$($tools -join ',')"
+    $stats = $status.stats
+    $aiAdditions      = [int]$stats.ai_additions
+    $humanAdditions   = [int]$stats.human_additions
+    $unknownAdditions = [int]$stats.unknown_additions
+    $totalAdditions   = $aiAdditions + $humanAdditions + $unknownAdditions
 
-    if ($aiPercent -lt $aiThreshold) { exit 0 }
+    Write-Log "ai=$aiAdditions human=$humanAdditions unknown=$unknownAdditions total=$totalAdditions"
+
+    if ($totalAdditions -eq 0 -or $aiAdditions -eq 0) {
+        Write-Log "No AI additions found - skipping"
+        exit 0
+    }
+
+    $aiPercent = [math]::Round(($aiAdditions / $totalAdditions) * 100)
+    Write-Log "AI%=$aiPercent"
+
+    if ($aiPercent -lt $aiThreshold) {
+        Write-Log "AI% below threshold ($aiThreshold) - skipping"
+        exit 0
+    }
+
+    # Determine tools from breakdown (keys are "tool/model" or "tool")
+    $tools = @()
+    foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
+        $tool = ($key -split '/')[0]
+        $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+    }
+
+    if ($tools.Count -eq 0) {
+        Write-Log "AI additions found but no tool breakdown - skipping"
+        exit 0
+    }
+
+    Write-Log "Tools: $($tools -join ', ')"
 
     $msg = Add-CoAuthors $msg $tools
-
     Set-Content -Path $MessageFile -Value $msg -NoNewline
 
     Write-Log "Co-authors appended"
