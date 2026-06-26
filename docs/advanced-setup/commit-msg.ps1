@@ -94,7 +94,9 @@ try {
 
     # Fallback: parse non-human checkpoints when breakdown is empty
     if ($tools.Count -eq 0) {
+        Write-Log "Checkpoints: $($status.checkpoints.Count)"
         foreach ($cp in $status.checkpoints) {
+            Write-Log "  cp: is_human=$($cp.is_human) tool_model=$($cp.tool_model) additions=$($cp.additions)"
             if ($cp.is_human -or -not $cp.tool_model) { continue }
             $tool = ($cp.tool_model -split '/')[0]
             $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
