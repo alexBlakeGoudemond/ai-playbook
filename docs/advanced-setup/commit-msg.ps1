@@ -88,7 +88,8 @@ try {
     # Determine tools: primary from breakdown, fallback from HEAD's refs/notes/ai session data
     $tools = @()
     foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
-        $tool = ($key -split '/')[0]
+        if ($key -match '@') { continue }  # skip human author entries (e.g. "Name <email@host>")
+        $tool = ($key -split '[/\s]')[0]   # handle both '/' and ' ' separators
         $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
     }
 
@@ -96,7 +97,7 @@ try {
     if ($tools.Count -eq 0) {
         foreach ($cp in $status.checkpoints) {
             if ($cp.is_human -or -not $cp.tool_model) { continue }
-            $tool = ($cp.tool_model -split '/')[0]
+            $tool = ($cp.tool_model -split '[/\s]')[0]
             $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
         }
     }
