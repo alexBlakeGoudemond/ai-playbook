@@ -101,29 +101,55 @@ try {
         }
     }
 
-    # Final fallback: read session tool from HEAD's refs/notes/ai staging note
-    if ($tools.Count -eq 0) {
-        $noteRaw = git notes --ref=refs/notes/ai show HEAD 2>$null
-        if ($noteRaw) {
-            $noteStr = ($noteRaw -join ' ').Trim()
-            $jsonPart = ($noteStr -split '\s*---\s*', 2)[-1].Trim()
-            try {
-                $noteStatus = ConvertFrom-Json $jsonPart
-                foreach ($k in $noteStatus.sessions.PSObject.Properties.Name) {
-                    $tool = $noteStatus.sessions.$k.agent_id.tool
-                    if ($tool) {
-                        $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
-                    }
-                }
-            } catch {
-                Write-Log "Failed to parse HEAD note for tool info: $_"
+    # Fallback: read session tool directly from git-ai status sessions
+    if ($tools.Count -eq 0 -and $status.sessions) {
+        foreach ($k in $status.sessions.PSObject.Properties.Name) {
+            $tool = $status.sessions.$k.agent_id.tool
+            if ($tool) {
+                $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
             }
         }
     }
 
+    # Helper: parse sessions tool from a refs/notes/ai note on a given ref
+    function Get-ToolsFromNote($ref) {
+        $noteRaw = git notes --ref=refs/notes/ai show $ref 2>$null
+        if (-not $noteRaw) { return @() }
+        $noteStr = ($noteRaw -join ' ').Trim()
+        $jsonPart = ($noteStr -split '\s*---\s*', 2)[-1].Trim()
+        $result = @()
+        try {
+            $noteStatus = ConvertFrom-Json $jsonPart
+            foreach ($k in $noteStatus.sessions.PSObject.Properties.Name) {
+                $tool = $noteStatus.sessions.$k.agent_id.tool
+                if ($tool) {
+                    $result += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+                }
+            }
+        } catch {
+            Write-Log "Failed to parse note for $ref`: $_"
+        }
+        return $result
+    }
+
+    # Fallback: after git reset --soft, ORIG_HEAD points to the previous commit which already has a git-ai note
     if ($tools.Count -eq 0) {
-        Write-Log "AI additions found but could not determine tool - skipping"
-        exit 0
+        $origHead = git rev-parse ORIG_HEAD 2>$null
+        if ($origHead) {
+            Write-Log "Trying ORIG_HEAD ($origHead) note for tool info"
+            $tools += Get-ToolsFromNote $origHead
+        }
+    }
+
+    # Fallback: HEAD's note (useful if parent commit had a session note)
+    if ($tools.Count -eq 0) {
+        Write-Log "Trying HEAD note for tool info"
+        $tools += Get-ToolsFromNote "HEAD"
+    }
+
+    if ($tools.Count -eq 0) {
+        Write-Log "AI additions found but tool unknown - falling back to generic AI attribution"
+        $tools = @("AI")
     }
 
     Write-Log "Tools: $($tools -join ', ')"
