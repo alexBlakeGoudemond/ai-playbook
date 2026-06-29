@@ -1,0 +1,24 @@
+docs/advanced-setup/commit-msg.ps1
+  s_2a7ab0cabfa448::t_3c379635583c66 91-92,100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "5cc2da2847b2bedc2fbac089a99d6281815be0a6",
+  "prompts": {},
+  "humans": {
+    "h_1197a506f6c7d6": {
+      "author": "Alex Blake-Goudemond <alexgoudemond@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2a7ab0cabfa448": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "3c3732c6-88ff-46a3-968e-4194a66f411c",
+        "model": "unknown"
+      },
+      "human_author": "Alex Blake-Goudemond <alexgoudemond@gmail.com>"
+    }
+  }
+}
