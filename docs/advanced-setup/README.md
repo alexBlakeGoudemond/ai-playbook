@@ -39,6 +39,12 @@ the hook queries `git-ai status --json` to get real-time uncommitted attribution
 
 ### Installation
 
+> NOTE: The instructions below are for a GLOBAL Git Hook, that applies in all situations.
+> It is possible to have Git Hooks for different configurations – separating Personal Hooks from Work Hooks. 
+> To achieve this, follow the instructions and test. THEN - nest your script in a subdirectory 
+> (for example `work` / `personal`) and then place the gitconfig instruction in the specific Git configuration
+> files instead. Consider removing the global hook and defining hooks for each configuration.
+
 1. Create a custom directory for your global git hooks (e.g. `~\.git-hooks`) and add to git config:
    `git config --global core.hooksPath C:\Users\<yourUserName>\.git-hooks`
 2. Copy [commit-msg](commit-msg) and [commit-msg.psq](commit-msg.ps1) to your global git hooks directory:
