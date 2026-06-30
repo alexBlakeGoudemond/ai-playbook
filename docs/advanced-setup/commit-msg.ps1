@@ -98,7 +98,9 @@ try {
     # Fallback: parse non-human checkpoints when breakdown is empty
     if ($tools.Count -eq 0) {
         foreach ($cp in $status.checkpoints) {
-            if ($cp.is_human -or -not $cp.tool_model) { continue }
+            if ($cp.is_human -eq $true -or -not $cp.tool_model) { continue }
+            if ($cp.tool_model -match '@') { continue }           # skip "Name <email@host>" format
+            if ($cp.tool_model -cmatch '^[A-Z]') { continue }    # skip human names (tool IDs are always lowercase)
             $tool = ($cp.tool_model -split '[/\s]')[0]
             $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
         }
@@ -108,9 +110,8 @@ try {
     if ($tools.Count -eq 0 -and $status.sessions) {
         foreach ($k in $status.sessions.PSObject.Properties.Name) {
             $tool = $status.sessions.$k.agent_id.tool
-            if ($tool) {
-                $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
-            }
+            if (-not $tool -or $tool -match '@' -or $tool -cmatch '^[A-Z]') { continue }
+            $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
         }
     }
 
