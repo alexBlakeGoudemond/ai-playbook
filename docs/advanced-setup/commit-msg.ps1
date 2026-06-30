@@ -18,11 +18,12 @@ function Write-Log($msg) {
 # Tool mapping
 # =========================
 $toolMap = @{
-    "github-copilot-cli" = "GitHub Copilot"
-    "copilot"            = "GitHub Copilot"
-    "cursor"             = "Cursor"
-    "git-ai"             = "Git AI"
-    "junie"              = "JetBrains Junie"
+    "github-copilot-cli"        = "GitHub Copilot"
+    "github-copilot-jetbrains"  = "GitHub Copilot"
+    "copilot"                   = "GitHub Copilot"
+    "cursor"                    = "Cursor"
+    "git-ai"                    = "Git AI"
+    "junie"                     = "JetBrains Junie"
 }
 
 # =========================
@@ -89,7 +90,7 @@ try {
     $tools = @()
     foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
         if ($key -match '@') { continue }          # skip "Name <email@host>" format
-        if ($key -match '^[A-Z]') { continue }     # skip human names (tool IDs are always lowercase)
+        if ($key -cmatch '^[A-Z]') { continue }     # skip human names (tool IDs are always lowercase)
         $tool = ($key -split '[/\s]')[0]            # handle both '/' and ' ' separators
         $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
     }
