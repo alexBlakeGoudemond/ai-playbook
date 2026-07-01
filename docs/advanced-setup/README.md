@@ -40,8 +40,8 @@ the hook queries `git-ai status --json` to get real-time uncommitted attribution
 ### Installation
 
 > NOTE: The instructions below are for a GLOBAL Git Hook, that applies in all situations.
-> It is possible to have Git Hooks for different configurations – separating Personal Hooks from Work Hooks. 
-> To achieve this, follow the instructions and test. THEN - nest your script in a subdirectory 
+> It is possible to have Git Hooks for different configurations – separating Personal Hooks from Work Hooks.
+> To achieve this, follow the instructions and test. THEN - nest your script in a subdirectory
 > (for example `work` / `personal`) and then place the gitconfig instruction in the specific Git configuration
 > files instead. Consider removing the global hook and defining hooks for each configuration.
 
@@ -70,3 +70,17 @@ the hook queries `git-ai status --json` to get real-time uncommitted attribution
     the metadata notes are present. The metadata will not be shown in the commit description
 12. In addition to this, you should be able to find the `git-ai-hook.log` in the TEMP directory of your machine, as
     the [commit-msg.ps1](docs/advanced-setup/commit-msg.ps1) writes there
+
+> NOTE:
+>
+> If `git-ai status` shows no AI attribution when expected, check the following:
+>
+> 1. **Background service is not running** — git-ai auto-detects AI tool usage via a background service.
+     > Check with `git-ai bg status` and start it with `git-ai bg start` if needed. This must be running per repo.
+>
+> 2. **AI tool not auto-detected** — some tools (e.g. JetBrains AI) may not be picked up automatically.
+     > In that case, manually checkpoint before committing: `git-ai checkpoint github-copilot` (or the relevant preset).
+     > Run `git-ai checkpoint --help` to see all available presets.
+>
+> 3. **Verify checkpoints exist** before committing by running `git-ai status --json` and checking that
+     > `checkpoints` is non-empty and `ai_additions > 0`.
