@@ -99,9 +99,9 @@ try {
     if ($tools.Count -eq 0) {
         foreach ($cp in $status.checkpoints) {
             if ($cp.is_human -eq $true -or -not $cp.tool_model) { continue }
-            if ($cp.tool_model -match '@') { continue }           # skip "Name <email@host>" format
-            if ($cp.tool_model -cmatch '^[A-Z]') { continue }    # skip human names (tool IDs are always lowercase)
-            $tool = ($cp.tool_model -split '[/\s]')[0]
+            if ($cp.tool_model -match '@') { continue }                        # skip "Name <email@host>" format
+            if ($cp.tool_model -cmatch '^[A-Z][a-z]+ [A-Z]') { continue }  # skip human names (e.g. "Alex Blake-Goudemond")
+            $tool = ($cp.tool_model -split '[/\s]')[0].ToLower()
             $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
         }
     }
