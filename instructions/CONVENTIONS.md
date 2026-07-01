@@ -32,13 +32,14 @@
     - bullet points
     - numbered steps
 - When generating code:
-    - At the end of a session with a user, please indicate which directories you considered from the AI Playbook to
+    - At the end of a session with a user, you must indicate which directories you considered from the AI Playbook to
       complete the request
         - This will assist the user in confirming that the AI Playbook is being used
         - If an instruction / skill is read and NOT used, do not include it in the output. Prefer to summarise the
           directories that were considered: `instructions`, `prompts`, `skills`, etc (if used)
         - At your discretion - you are encouraged to include any file that is highly influential in the decision-making
           process, as that information will assist in improving the AI Playbook over time
+        - Example of the message to the user at the end: `[ai-playbook-instruction] Folders used in this session: ...`
     - If you are permitted to make code changes (for example, in a mode like `CODE`, `AGENT`, etc) then before making
       any changes, summarize your thoughts and plan and ask the user to approve BEFORE starting anything. This must
       be done every time
