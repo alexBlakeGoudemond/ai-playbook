@@ -89,9 +89,9 @@ try {
     # Determine tools: primary from breakdown, fallback from HEAD's refs/notes/ai session data
     $tools = @()
     foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
-        if ($key -match '@') { continue }          # skip "Name <email@host>" format
-        if ($key -cmatch '^[A-Z]') { continue }     # skip human names (tool IDs are always lowercase)
-        $tool = ($key -split '[/\s]')[0]            # handle both '/' and ' ' separators
+        if ($key -match '@') { continue }                       # skip "Name <email@host>" format
+        if ($key -cmatch '^[A-Z][a-z]+ [A-Z]') { continue } # skip human names (e.g. "Alex Blake-Goudemond")
+        $tool = ($key -split '[/\s]')[0].ToLower()           # handle both '/' and ' ' separators
         $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
     }
 
