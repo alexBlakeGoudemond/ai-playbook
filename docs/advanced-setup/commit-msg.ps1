@@ -152,8 +152,8 @@ try {
     }
 
     if ($tools.Count -eq 0) {
-        Write-Log "AI additions found but tool unknown - falling back to generic AI attribution"
-        $tools = @("AI")
+        Write-Log "AI additions found but no tool session identified - skipping attribution"
+        exit 0
     }
 
     Write-Log "Tools: $($tools -join ', ')"
