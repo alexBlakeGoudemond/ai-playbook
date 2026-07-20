@@ -1,0 +1,28 @@
+.custom-scripts/bin/firstaid.cmd
+  s_5697478ddbffb3::t_9078f271cbec9f 1-2
+.custom-scripts/bin/firstaid
+  s_5697478ddbffb3::t_7d17db2e11c1ed 1-2
+.custom-scripts/bin/firstaid.py
+  s_5697478ddbffb3::t_0b556b64943ee3 322
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "36c157ab4a1be1648fcbc55b31f41dc14c565e13",
+  "prompts": {},
+  "humans": {
+    "h_1197a506f6c7d6": {
+      "author": "Alex Blake-Goudemond <alexgoudemond@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5697478ddbffb3": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "9cb240dd-38f1-44fb-8b61-e7c6b425133c",
+        "model": "unknown"
+      },
+      "human_author": "Alex Blake-Goudemond <alexgoudemond@gmail.com>"
+    }
+  }
+}
