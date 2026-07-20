@@ -319,6 +319,7 @@ def link_playbook():
 
 
 def print_usage():
+    pass
 
 
 if __name__ == "__main__":
