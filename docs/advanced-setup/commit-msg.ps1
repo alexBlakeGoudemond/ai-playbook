@@ -145,12 +145,6 @@ try {
         }
     }
 
-    # Fallback: HEAD's note (useful if parent commit had a session note)
-    if ($tools.Count -eq 0) {
-        Write-Log "Trying HEAD note for tool info"
-        $tools += Get-ToolsFromNote "HEAD"
-    }
-
     if ($tools.Count -eq 0) {
         Write-Log "AI additions found but no tool session identified - skipping attribution"
         exit 0
