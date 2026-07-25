@@ -67,14 +67,21 @@ try {
 
     $stats = $status.stats
     $aiAdditions      = [int]$stats.ai_additions
+    $aiAccepted       = [int]$stats.ai_accepted
     $humanAdditions   = [int]$stats.human_additions
     $unknownAdditions = [int]$stats.unknown_additions
     $totalAdditions   = $aiAdditions + $humanAdditions + $unknownAdditions
 
-    Write-Log "ai=$aiAdditions human=$humanAdditions unknown=$unknownAdditions total=$totalAdditions"
+    Write-Log "ai=$aiAdditions accepted=$aiAccepted human=$humanAdditions unknown=$unknownAdditions total=$totalAdditions"
 
     if ($totalAdditions -eq 0 -or $aiAdditions -eq 0) {
         Write-Log "No AI additions found - skipping"
+        exit 0
+    }
+
+    # Guard against session-only attribution where no AI output was actually accepted.
+    if ($aiAccepted -eq 0) {
+        Write-Log "AI additions exist but accepted suggestions are zero - skipping"
         exit 0
     }
 
@@ -86,13 +93,16 @@ try {
         exit 0
     }
 
-    # Determine tools: primary from breakdown, fallback from HEAD's refs/notes/ai session data
+    # Determine tools from explicit AI-attribution signals only.
+    # Do not use session/note metadata fallbacks: they can exist for human-only commits.
     $tools = @()
-    foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
-        if ($key -match '@') { continue }                       # skip "Name <email@host>" format
-        if ($key -cmatch '^[A-Z][a-z]+ [A-Z]') { continue } # skip human names (e.g. "Alex Blake-Goudemond")
-        $tool = ($key -split '[/\s]')[0].ToLower()           # handle both '/' and ' ' separators
-        $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+    if ($stats.tool_model_breakdown) {
+        foreach ($key in $stats.tool_model_breakdown.PSObject.Properties.Name) {
+            if ($key -match '@') { continue }                       # skip "Name <email@host>" format
+            if ($key -cmatch '^[A-Z][a-z]+ [A-Z]') { continue } # skip human names (e.g. "Alex Blake-Goudemond")
+            $tool = ($key -split '[/\s]')[0].ToLower()           # handle both '/' and ' ' separators
+            $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
+        }
     }
 
     # Fallback: parse non-human checkpoints when breakdown is empty
@@ -106,47 +116,8 @@ try {
         }
     }
 
-    # Fallback: read session tool directly from git-ai status sessions
-    if ($tools.Count -eq 0 -and $status.sessions) {
-        foreach ($k in $status.sessions.PSObject.Properties.Name) {
-            $tool = $status.sessions.$k.agent_id.tool
-            if (-not $tool -or $tool -match '@' -or $tool -cmatch '^[A-Z]') { continue }
-            $tools += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
-        }
-    }
-
-    # Helper: parse sessions tool from a refs/notes/ai note on a given ref
-    function Get-ToolsFromNote($ref) {
-        $noteRaw = git notes --ref=refs/notes/ai show $ref 2>$null
-        if (-not $noteRaw) { return @() }
-        $noteStr = ($noteRaw -join ' ').Trim()
-        $jsonPart = ($noteStr -split '\s*---\s*', 2)[-1].Trim()
-        $result = @()
-        try {
-            $noteStatus = ConvertFrom-Json $jsonPart
-            foreach ($k in $noteStatus.sessions.PSObject.Properties.Name) {
-                $tool = $noteStatus.sessions.$k.agent_id.tool
-                if ($tool) {
-                    $result += if ($toolMap.ContainsKey($tool)) { $toolMap[$tool] } else { $tool }
-                }
-            }
-        } catch {
-            Write-Log "Failed to parse note for $ref`: $_"
-        }
-        return $result
-    }
-
-    # Fallback: after git reset --soft, ORIG_HEAD points to the previous commit which already has a git-ai note
     if ($tools.Count -eq 0) {
-        $origHead = git rev-parse ORIG_HEAD 2>$null
-        if ($origHead) {
-            Write-Log "Trying ORIG_HEAD ($origHead) note for tool info"
-            $tools += Get-ToolsFromNote $origHead
-        }
-    }
-
-    if ($tools.Count -eq 0) {
-        Write-Log "AI additions found but no tool session identified - skipping attribution"
+        Write-Log "AI additions found but no explicit tool attribution detected - skipping"
         exit 0
     }
 
